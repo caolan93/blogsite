@@ -1,11 +1,10 @@
-import Fastify, { FastifyInstance } from 'fastify';
+import fastifyAutoload from '@fastify/autoload';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { config } from 'dotenv';
-import fastifyPlugin from 'fastify-plugin';
+import Fastify from 'fastify';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cors from './plugins/cors.js';
-import fastifyAutoload from '@fastify/autoload';
 
 function getLoggerOptions() {
 	if (process.stdout.isTTY) {

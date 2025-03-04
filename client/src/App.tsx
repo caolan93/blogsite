@@ -6,11 +6,12 @@ import { Input } from './components/ui/input';
 const App = () => {
 	const handleSubmit = async (e: FormEvent) => {
 		try {
+			console.log('click');
 			e.preventDefault();
 			const data = await fetch('http://localhost:3000/api/v1/register', {
 				method: 'POST',
 				headers: {
-					'Content Type': 'application/json',
+					'Content-Type': 'application/json',
 				},
 			});
 

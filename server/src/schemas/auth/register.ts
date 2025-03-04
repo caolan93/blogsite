@@ -8,9 +8,15 @@ export const registerSchema: FastifySchema = {
 	body: {
 		type: 'object',
 		properties: {
-			firstName: 'string',
-			lastName: 'string',
-			email: 'string',
+			firstName: {
+				type: 'string',
+			},
+			lastName: {
+				type: 'string',
+			},
+			email: {
+				type: 'string',
+			},
 		},
 		required: ['firstName', 'lastName', 'email'],
 	},
