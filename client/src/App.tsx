@@ -1,7 +1,9 @@
+import { Card } from './components/ui/card';
+
 const App = () => {
 	return (
 		<main>
-			<p>main</p>
+			<Card></Card>
 		</main>
 	);
 };
