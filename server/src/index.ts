@@ -32,9 +32,6 @@ const start = async () => {
 		const __filename = fileURLToPath(import.meta.url);
 		const __dirname = dirname(__filename);
 		await fastify.register(cors);
-		// await fastify.register(fastifyPlugin(mongodbConnector));
-		// await fastify.register(jwtPlugin);
-		// await fastify.register(swagger);
 
 		// This loads all plugins defined in routes
 		// define your routes in one of these
