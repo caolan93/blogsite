@@ -2,6 +2,9 @@ import { FastifySchema } from 'fastify';
 
 const registerResponseProperties = {
 	message: { type: 'string' },
+	firstName: { type: 'string' },
+	lastName: { type: 'string' },
+	email: { type: 'string' },
 };
 
 export const registerSchema: FastifySchema = {

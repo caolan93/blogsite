@@ -6,7 +6,12 @@ export default async function register(
 	}>,
 	reply: FastifyReply,
 ) {
-	const { email, firstName, lastName } = request.body;
+	const { firstName, lastName, email } = request.body;
 
-	return reply.code(201).send({ message: 'That worked cool stuff!' });
+	return reply.code(201).send({
+		message: 'hello',
+		firstName,
+		lastName,
+		email,
+	});
 }
