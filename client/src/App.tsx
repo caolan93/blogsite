@@ -8,14 +8,26 @@ const App = () => {
 		try {
 			console.log('click');
 			e.preventDefault();
-			const data = await fetch('http://localhost:3000/api/v1/register', {
+			const form = new FormData(e.target as HTMLFormElement);
+
+			const firstName = form.get('first-name');
+			const lastName = form.get('last-name');
+			const email = form.get('email');
+			const data = await fetch('http://localhost:3000/api/v1/auth/register', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 				},
+				body: JSON.stringify({
+					firstName,
+					lastName,
+					email,
+				}),
 			});
 
-			console.log(data);
+			const res = await data.json();
+
+			console.log(res);
 		} catch (error) {
 			console.log(error);
 		}
@@ -29,8 +41,8 @@ const App = () => {
 					className='flex flex-col justify-center items-center p-2 gap-3'
 					action=''>
 					<div className='grid grid-cols-2 gap-1.5 w-full'>
-						<Input name='first-name' type='text' placeholder='First Name' />
-						<Input name='last-name' type='text' placeholder='Last Name' />
+						<Input name='firstName' type='text' placeholder='First Name' />
+						<Input name='lastName' type='text' placeholder='Last Name' />
 					</div>
 					<Input name='email' type='email' placeholder='Email' />
 					<Button className='max-w-fit'>Register</Button>
