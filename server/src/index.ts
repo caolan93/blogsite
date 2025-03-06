@@ -2,9 +2,11 @@ import fastifyAutoload from '@fastify/autoload';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { config } from 'dotenv';
 import Fastify from 'fastify';
+import fastifyPlugin from 'fastify-plugin';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cors from './plugins/cors.js';
+import dbConnector from './plugins/database.js';
 
 function getLoggerOptions() {
 	if (process.stdout.isTTY) {
@@ -27,21 +29,23 @@ const fastify = Fastify({
 	logger: getLoggerOptions(),
 }).withTypeProvider<TypeBoxTypeProvider>();
 
+// This loads all plugins defined in routes
+// define your routes in one of these
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// PLUGINS
+fastify.register(cors);
+fastify.register(fastifyPlugin(dbConnector));
+fastify.register(fastifyAutoload, {
+	dir: join(__dirname, './routes'),
+	autoHooks: true,
+	cascadeHooks: true,
+	options: { prefix: '/api/v1' },
+});
+
 const start = async () => {
 	try {
-		const __filename = fileURLToPath(import.meta.url);
-		const __dirname = dirname(__filename);
-		await fastify.register(cors);
-
-		// This loads all plugins defined in routes
-		// define your routes in one of these
-		fastify.register(fastifyAutoload, {
-			dir: join(__dirname, './routes'),
-			autoHooks: true,
-			cascadeHooks: true,
-			options: { prefix: '/api/v1' },
-		});
-
 		await fastify.listen({ port: 3000 });
 	} catch (err) {
 		fastify.log.error(err);
