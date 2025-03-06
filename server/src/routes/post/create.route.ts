@@ -6,6 +6,7 @@ export default async function create(
 	}>,
 	reply: FastifyReply,
 ) {
+	const { db } = request.server;
 	const { title, post } = request.body;
 
 	if (!title) {
@@ -20,7 +21,17 @@ export default async function create(
 		});
 	}
 
-	return reply.code(201).send({
-		message: 'Your blog post was saved successfully!',
-	});
+	try {
+		const dbQuery = `INSERT INTO posts (title, post) VALUES ($1, $2)`;
+		await db.query(dbQuery, [title, post]);
+
+		return reply.code(201).send({
+			message: 'Your blog post was saved successfully!',
+		});
+	} catch (error) {
+		request.server.log.error('Error inserting post:', error);
+		return reply.code(500).send({
+			message: 'Internal server error',
+		});
+	}
 }

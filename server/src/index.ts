@@ -44,6 +44,17 @@ fastify.register(fastifyAutoload, {
 	options: { prefix: '/api/v1' },
 });
 
+// If database fails to connect don't start server
+async function main() {
+	try {
+		await fastify.register(dbConnector);
+		await start();
+	} catch (err) {
+		fastify.log.error('Application startup error:', err);
+		process.exit(1);
+	}
+}
+
 const start = async () => {
 	try {
 		await fastify.listen({ port: 3000 });
