@@ -5,7 +5,7 @@ import Fastify from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import cors from './plugins/cors.js';
+import cors, { autoConfig } from './plugins/cors.js';
 import dbConnector from './plugins/database.js';
 
 function getLoggerOptions() {
@@ -35,7 +35,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // PLUGINS
-fastify.register(cors);
+fastify.register(cors, autoConfig);
 fastify.register(fastifyPlugin(dbConnector));
 fastify.register(fastifyAutoload, {
 	dir: join(__dirname, './routes'),

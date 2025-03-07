@@ -1,4 +1,4 @@
-import { FormEvent, useRef, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Button } from '../../components/ui/button';
 import {
 	Dialog,
@@ -13,6 +13,9 @@ import { Textarea } from '../../components/ui/textarea';
 const PostsPage = () => {
 	const [postTitle, setPostTitle] = useState<string>('');
 	const [postDesc, setPostDesc] = useState<string>('');
+	const [posts, setPosts] = useState<
+		Array<{ title: string; post: string; id: number }>
+	>([]);
 	const [response, setResponse] = useState<string | null>(null);
 	const dialogRef = useRef<HTMLDivElement | null>(null);
 
@@ -38,6 +41,36 @@ const PostsPage = () => {
 			setResponse(res.message);
 		} catch (error) {
 			console.error(error);
+		}
+	};
+
+	const fetchPosts = async () => {
+		const data = await fetch('http://localhost:3000/api/v1/post/getAll', {
+			method: 'GET',
+		});
+
+		const res = await data.json();
+		console.log('res', res);
+		setPosts(res.posts);
+	};
+
+	const deletePost = async (id: number) => {
+		try {
+			const data = await fetch(
+				`http://localhost:3000/api/v1/post/delete/${String(id)}`,
+				{
+					method: 'DELETE',
+				},
+			);
+
+			if (data.status !== 204) {
+				const res = await data.json();
+				return setResponse(res.message);
+			}
+
+			return setResponse('Post deleted successfully');
+		} catch (error) {
+			console.log(error);
 		}
 	};
 
@@ -75,6 +108,22 @@ const PostsPage = () => {
 					</form>
 				</DialogContent>
 			</Dialog>
+
+			<div>
+				<Button onClick={fetchPosts}>Fetch Posts</Button>
+				{posts?.length > 0 &&
+					posts?.map((post) => (
+						<article key={post.id} className='flex flex-col'>
+							<p>{post.title}</p>
+							<p>{post.post}</p>
+							<Button
+								onClick={() => deletePost(post.id)}
+								variant={'destructive'}>
+								Delete
+							</Button>
+						</article>
+					))}
+			</div>
 		</section>
 	);
 };
