@@ -1,4 +1,7 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { FormEvent, useRef, useState } from 'react';
+import { deletePost } from '../../api/posts/delete.api';
+import { getAllPosts } from '../../api/posts/getAll.api';
 import { Button } from '../../components/ui/button';
 import {
 	Dialog,
@@ -9,70 +12,75 @@ import {
 } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
+import { createPost } from '../../api/posts/create.api';
 
 const PostsPage = () => {
 	const [postTitle, setPostTitle] = useState<string>('');
 	const [postDesc, setPostDesc] = useState<string>('');
-	const [posts, setPosts] = useState<
-		Array<{ title: string; post: string; id: number }>
-	>([]);
+	const queryClient = useQueryClient();
+
+	const { data, isLoading } = useQuery<{
+		posts: Array<{ title: string; post: string; id: number }>;
+	}>({
+		queryKey: ['posts'],
+		queryFn: async () => {
+			return await getAllPosts();
+		},
+	});
+
+	const { mutate: deletePostFn } = useMutation({
+		mutationFn: async (id: number) => {
+			return await deletePost(id);
+		},
+		onMutate: async (deletedPostId) => {
+			await queryClient.cancelQueries({
+				queryKey: ['posts'],
+			});
+
+			const previousPosts = queryClient.getQueryData(['posts']);
+
+			queryClient.setQueryData(
+				['posts'],
+				(old: {
+					posts: Array<{ title: string; post: string; id: number }>;
+				}) => {
+					if (!old) return [];
+					return {
+						...old,
+						data: old.posts.filter((post) => post.id !== deletedPostId),
+					};
+				},
+			);
+
+			// Return a context object with the snapshotted value
+			return { previousPosts };
+		},
+	});
+	const { mutate: createPostFn } = useMutation({
+		mutationFn: async () => {
+			await createPost(postTitle, postDesc);
+		},
+		onSuccess: () => {
+			setResponse('Your post was created successfully');
+		},
+		onError: () => {
+			setResponse('There was an error creating post');
+		},
+	});
 	const [response, setResponse] = useState<string | null>(null);
 	const dialogRef = useRef<HTMLDivElement | null>(null);
 
 	const handleSubmit = async (e: FormEvent) => {
 		try {
 			e.preventDefault();
-			const data = await fetch('http://localhost:3000/api/v1/post/create', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					title: postTitle,
-					post: postDesc,
-				}),
-			});
-
-			if (!data.ok) {
-				throw new Error('There was an error');
-			}
-
-			const res = await data.json();
-			setResponse(res.message);
 		} catch (error) {
 			console.error(error);
 		}
 	};
 
-	const fetchPosts = async () => {
-		const data = await fetch('http://localhost:3000/api/v1/post/getAll', {
-			method: 'GET',
-		});
-
-		const res = await data.json();
-		console.log('res', res);
-		setPosts(res.posts);
-	};
-
-	const deletePost = async (id: number) => {
-		try {
-			const data = await fetch(
-				`http://localhost:3000/api/v1/post/delete/${String(id)}`,
-				{
-					method: 'DELETE',
-				},
-			);
-
-			if (data.status !== 204) {
-				const res = await data.json();
-				return setResponse(res.message);
-			}
-
-			return setResponse('Post deleted successfully');
-		} catch (error) {
-			console.log(error);
-		}
-	};
+	if (isLoading) {
+		return <p>is loading</p>;
+	}
 
 	return (
 		<section>
@@ -104,20 +112,20 @@ const PostsPage = () => {
 							value={postDesc}
 							onChange={(e) => setPostDesc(e.target.value)}
 						/>
-						<Button>Create Post</Button>
+						<Button onClick={() => createPostFn()}>Create Post</Button>
 					</form>
 				</DialogContent>
 			</Dialog>
 
 			<div>
-				<Button onClick={fetchPosts}>Fetch Posts</Button>
-				{posts?.length > 0 &&
-					posts?.map((post) => (
+				{data?.posts &&
+					data?.posts?.length > 0 &&
+					data?.posts?.map((post) => (
 						<article key={post.id} className='flex flex-col'>
 							<p>{post.title}</p>
 							<p>{post.post}</p>
 							<Button
-								onClick={() => deletePost(post.id)}
+								onClick={() => deletePostFn(post.id)}
 								variant={'destructive'}>
 								Delete
 							</Button>
