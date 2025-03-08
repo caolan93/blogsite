@@ -1,7 +1,9 @@
+import { Post } from '../../lib/types';
+
 export const createPost = async (
 	postTitle: string,
 	postDesc: string,
-): Promise<Array<{ id: number; title: string; post: string }> | null> => {
+): Promise<{ message: string; post: Post } | undefined> => {
 	try {
 		const data = await fetch('http://localhost:3000/api/v1/post/create', {
 			method: 'POST',
@@ -21,6 +23,6 @@ export const createPost = async (
 		return await data.json();
 	} catch (error) {
 		console.error(error);
-		return null;
+		return undefined;
 	}
 };
