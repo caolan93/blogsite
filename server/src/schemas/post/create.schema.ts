@@ -20,7 +20,14 @@ export const createPostSchema: FastifySchema = {
 	response: {
 		201: {
 			type: 'object',
-			properties: createPostResponseProperties,
+			properties: {
+				message: { type: 'string' },
+				post: {
+					id: 'number',
+					title: 'string',
+					post: 'string',
+				},
+			},
 		},
 		400: {
 			type: 'object',
