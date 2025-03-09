@@ -14,25 +14,10 @@ import { Textarea } from '../../../components/ui/textarea';
 import type { Post, PostList } from '../../../lib/types';
 
 const CreatePostForm = () => {
-	const [formData, setFormData] = useState<{
-		postTitle: string;
-		postDesc: string;
-	}>({
-		postTitle: '',
-		postDesc: '',
-	});
-
-	const handleChange = useCallback(
-		(e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>) => {
-			setFormData((prevFormData) => ({
-				...prevFormData,
-				[e.target.name]: e.target.value,
-			}));
-		},
-		[],
-	);
-	const [open, setOpen] = useState<boolean>(false);
 	const queryClient = useQueryClient();
+	const [post, setPost] = useState<string>('');
+	const [title, setTitle] = useState<string>('');
+	const [open, setOpen] = useState<boolean>(false);
 
 	const {
 		mutate: createPostFn,
@@ -40,7 +25,7 @@ const CreatePostForm = () => {
 		error,
 	} = useMutation({
 		mutationFn: async () => {
-			const response = await createPost(formData.postTitle, formData.postDesc);
+			const response = await createPost(title, post);
 
 			if (!response || !response.post) {
 				throw new Error('Failed to create post');
@@ -60,8 +45,8 @@ const CreatePostForm = () => {
 						posts: [
 							{
 								id: tempId,
-								title: formData.postTitle,
-								post: formData.postDesc,
+								title,
+								post,
 							},
 						],
 					};
@@ -72,8 +57,8 @@ const CreatePostForm = () => {
 						...old.posts,
 						{
 							id: tempId,
-							title: formData.postTitle,
-							post: formData.postDesc,
+							title,
+							post,
 						},
 					],
 				};
@@ -89,7 +74,6 @@ const CreatePostForm = () => {
 					),
 				};
 			});
-
 			setOpen(false);
 		},
 		onError: async (_err, _newPost, context) => {
@@ -128,13 +112,15 @@ const CreatePostForm = () => {
 						name='title'
 						type='text'
 						placeholder='Title'
-						onChange={(e) => handleChange(e)}
+						value={title}
+						onChange={(e) => setTitle(e.target.value)}
 					/>
 					<Textarea
 						name='post'
 						placeholder={`What's going on?..`}
 						rows={20}
-						onChange={(e) => handleChange(e)}
+						value={post}
+						onChange={(e) => setPost(e.target.value)}
 					/>
 					<Button onClick={handleSubmit} disabled={isPending}>
 						Create Post

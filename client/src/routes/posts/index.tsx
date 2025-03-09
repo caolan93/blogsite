@@ -5,7 +5,6 @@ import type { PostList } from '../../lib/types';
 import PostPageSkeleton from './components/PostPageSkeletonLoader';
 
 const PostList = lazy(() => import('./components/PostList'));
-const CreatePostForm = lazy(() => import('./components/CreatePostForm'));
 
 const PostsPage = () => {
 	const { data, isLoading } = useQuery<PostList>({
@@ -22,7 +21,7 @@ const PostsPage = () => {
 	return (
 		<Suspense fallback={<PostPageSkeleton />}>
 			<section>
-				<CreatePostForm />
+				<p className='text-xl font-bold p-4'>All Posts</p>
 				<PostList posts={data?.posts} />
 			</section>
 		</Suspense>
