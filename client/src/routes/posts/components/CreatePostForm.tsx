@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChangeEvent, FormEvent, useCallback, useState } from 'react';
+import { FormEvent, useState } from 'react';
+import { toast } from 'sonner';
 import { createPost } from '../../../api/posts/create.api';
 import { Button } from '../../../components/ui/button';
 import {
@@ -19,13 +20,15 @@ const CreatePostForm = () => {
 	const [title, setTitle] = useState<string>('');
 	const [open, setOpen] = useState<boolean>(false);
 
-	const {
-		mutate: createPostFn,
-		isPending,
-		error,
-	} = useMutation({
-		mutationFn: async () => {
-			const response = await createPost(title, post);
+	const { mutate: createPostFn, isPending } = useMutation({
+		mutationFn: async ({
+			title: newTitle,
+			post: newPost,
+		}: {
+			title: string;
+			post: string;
+		}) => {
+			const response = await createPost(newTitle, newPost);
 
 			if (!response || !response.post) {
 				throw new Error('Failed to create post');
@@ -69,15 +72,21 @@ const CreatePostForm = () => {
 			queryClient.setQueryData(['posts'], (old: PostList | undefined) => {
 				if (!old) return { posts: [newPost.post] };
 				return {
-					posts: old.posts.filter((post) =>
+					posts: old.posts.map((post) =>
 						post.id === context.tempId ? newPost : post,
 					),
 				};
 			});
 			setOpen(false);
+			toast.success('Blog has been successfully created', {
+				richColors: true,
+			});
 		},
 		onError: async (_err, _newPost, context) => {
 			queryClient.setQueryData(['posts'], context?.previousPosts);
+			toast.error('There was an error when creating the blog post', {
+				richColors: true,
+			});
 		},
 		onSettled: () => {
 			queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -87,7 +96,7 @@ const CreatePostForm = () => {
 	const handleSubmit = async (e: FormEvent) => {
 		try {
 			e.preventDefault();
-			createPostFn();
+			createPostFn({ title, post });
 		} catch (error) {
 			console.error(error);
 		}
@@ -99,11 +108,6 @@ const CreatePostForm = () => {
 				<Button>Create Post</Button>
 			</DialogTrigger>
 			<DialogContent>
-				{error && (
-					<p className='text-red-500'>
-						There was an error trying to create the post.
-					</p>
-				)}
 				<DialogHeader>
 					<DialogTitle>Create a post</DialogTitle>
 				</DialogHeader>
@@ -122,9 +126,7 @@ const CreatePostForm = () => {
 						value={post}
 						onChange={(e) => setPost(e.target.value)}
 					/>
-					<Button onClick={handleSubmit} disabled={isPending}>
-						Create Post
-					</Button>
+					<Button disabled={isPending}>Create Post</Button>
 				</form>
 			</DialogContent>
 		</Dialog>
