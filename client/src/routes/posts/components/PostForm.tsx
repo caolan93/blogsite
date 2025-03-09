@@ -13,14 +13,25 @@ import {
 import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
 import type { Post, PostList } from '../../../lib/types';
+import { editPost } from '../../../api/posts/edit.api';
 
-const CreatePostForm = () => {
+const PostForm = ({
+	isEdit = false,
+	prevTitle,
+	prevPost,
+	id,
+}: {
+	isEdit?: boolean;
+	prevTitle?: string;
+	prevPost?: string;
+	id?: number;
+}) => {
 	const queryClient = useQueryClient();
-	const [post, setPost] = useState<string>('');
-	const [title, setTitle] = useState<string>('');
+	const [post, setPost] = useState<string>(prevPost ?? '');
+	const [title, setTitle] = useState<string>(prevTitle ?? '');
 	const [open, setOpen] = useState<boolean>(false);
 
-	const { mutate: createPostFn, isPending } = useMutation({
+	const { mutate: createPostFn, isPending: createPending } = useMutation({
 		mutationFn: async ({
 			title: newTitle,
 			post: newPost,
@@ -78,6 +89,8 @@ const CreatePostForm = () => {
 				};
 			});
 			setOpen(false);
+			setPost('');
+			setTitle('');
 			toast.success('Blog has been successfully created', {
 				richColors: true,
 			});
@@ -93,9 +106,86 @@ const CreatePostForm = () => {
 		},
 	});
 
+	const { mutate: editPostFn, isPending: editPending } = useMutation({
+		mutationFn: async ({
+			id,
+			title: newTitle,
+			post: newPost,
+		}: {
+			id?: number;
+			title?: string;
+			post?: string;
+		}) => {
+			const response = await editPost(id, newTitle, newPost);
+			if (!response || !response.post) {
+				throw new Error('Failed to update post');
+			}
+
+			return response;
+		},
+		onMutate: async () => {
+			await queryClient.cancelQueries({
+				queryKey: ['posts'],
+			});
+			const previousPosts = queryClient.getQueryData(['posts']);
+			queryClient.setQueryData(['posts'], (old: { posts: Post[] }) => {
+				if (!old) {
+					return {
+						posts: [
+							{
+								id,
+								title,
+								post,
+							},
+						],
+					};
+				}
+				return {
+					...old,
+					posts: old.posts.map((post) =>
+						post.id === id
+							? {
+									id,
+									title,
+									post,
+							  }
+							: post,
+					),
+				};
+			});
+			return { previousPosts };
+		},
+		onSuccess: (newPost: { message: string; post: Post }) => {
+			queryClient.setQueryData(['posts'], (old: PostList | undefined) => {
+				if (!old) return { posts: [newPost.post] };
+				return {
+					posts: old.posts.map((post) => (post.id === id ? newPost : post)),
+				};
+			});
+			setOpen(false);
+			setPost('');
+			setTitle('');
+			toast.success('Blog has been successfully updated', {
+				richColors: true,
+			});
+		},
+		onError: async (_err, _newPost, context) => {
+			queryClient.setQueryData(['posts'], context?.previousPosts);
+			toast.error('There was an error when updating the blog post', {
+				richColors: true,
+			});
+		},
+		onSettled: () => {
+			queryClient.invalidateQueries({ queryKey: ['posts'] });
+		},
+	});
+
 	const handleSubmit = async (e: FormEvent) => {
 		try {
 			e.preventDefault();
+			if (isEdit) {
+				return editPostFn({ id, title, post });
+			}
 			createPostFn({ title, post });
 		} catch (error) {
 			console.error(error);
@@ -105,7 +195,7 @@ const CreatePostForm = () => {
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button>Create Post</Button>
+				<Button>{isEdit ? 'Edit' : 'Create Post'}</Button>
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
@@ -126,11 +216,13 @@ const CreatePostForm = () => {
 						value={post}
 						onChange={(e) => setPost(e.target.value)}
 					/>
-					<Button disabled={isPending}>Create Post</Button>
+					<Button disabled={createPending || editPending}>
+						{isEdit ? 'Update Post' : 'Create Post'}
+					</Button>
 				</form>
 			</DialogContent>
 		</Dialog>
 	);
 };
 
-export default CreatePostForm;
+export default PostForm;

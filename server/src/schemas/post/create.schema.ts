@@ -26,6 +26,7 @@ export const createPostSchema: FastifySchema = {
 					id: 'number',
 					title: 'string',
 					post: 'string',
+					created_at: 'string',
 				},
 			},
 		},

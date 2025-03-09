@@ -7,7 +7,7 @@ export default async function getAll(
 	const { db } = request.server;
 
 	try {
-		const dbQuery = `SELECT  * FROM posts`;
+		const dbQuery = `SELECT  * FROM posts ORDER BY posts.id`;
 		const data = await db.query(dbQuery);
 
 		return reply.code(200).send({

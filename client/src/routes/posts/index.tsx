@@ -20,8 +20,8 @@ const PostsPage = () => {
 
 	return (
 		<Suspense fallback={<PostPageSkeleton />}>
-			<section>
-				<p className='text-xl font-bold p-4'>All Posts</p>
+			<section className='p-4 flex flex-col gap-2 items-center'>
+				<p className='text-xl font-bold'>All Posts</p>
 				<PostList posts={data?.posts} />
 			</section>
 		</Suspense>
