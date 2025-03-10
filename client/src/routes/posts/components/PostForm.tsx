@@ -31,158 +31,82 @@ const PostForm = ({
 	const [title, setTitle] = useState<string>(prevTitle ?? '');
 	const [open, setOpen] = useState<boolean>(false);
 
-	const { mutate: createPostFn, isPending: createPending } = useMutation({
-		mutationFn: async ({
-			title: newTitle,
-			post: newPost,
-		}: {
-			title: string;
-			post: string;
-		}) => {
-			const response = await createPost(newTitle, newPost);
-
-			if (!response || !response.post) {
-				throw new Error('Failed to create post');
-			}
-
-			return response;
-		},
-		onMutate: async () => {
-			await queryClient.cancelQueries({
-				queryKey: ['posts'],
-			});
-			const previousPosts = queryClient.getQueryData(['posts']);
-			let tempId = Date.now();
-			queryClient.setQueryData(['posts'], (old: { posts: Post[] }) => {
-				if (!old) {
-					return {
-						posts: [
-							{
-								id: tempId,
-								title,
-								post,
-							},
-						],
-					};
-				}
-				return {
-					...old,
-					posts: [
-						...old.posts,
-						{
-							id: tempId,
-							title,
-							post,
-						},
-					],
-				};
-			});
-			return { previousPosts, tempId };
-		},
-		onSuccess: (newPost: { message: string; post: Post }, _, context) => {
-			queryClient.setQueryData(['posts'], (old: PostList | undefined) => {
-				if (!old) return { posts: [newPost.post] };
-				return {
-					posts: old.posts.map((post) =>
-						post.id === context.tempId ? newPost.post : post,
-					),
-				};
-			});
-			setOpen(false);
-			setPost('');
-			setTitle('');
-			toast.success('Blog has been successfully created', {
-				richColors: true,
-			});
-		},
-		onError: async (_err, _newPost, context) => {
-			queryClient.setQueryData(['posts'], context?.previousPosts);
-			toast.error('There was an error when creating the blog post', {
-				richColors: true,
-			});
-		},
-	});
-
-	const { mutate: editPostFn, isPending: editPending } = useMutation({
+	const { mutate: submitPost, isPending: isSubmitting } = useMutation({
 		mutationFn: async ({
 			id,
 			title: newTitle,
 			post: newPost,
 		}: {
 			id?: number;
-			title?: string;
-			post?: string;
+			title: string;
+			post: string;
 		}) => {
-			const response = await editPost(id, newTitle, newPost);
-			if (!response || !response.post) {
-				throw new Error('Failed to update post');
+			if (isEdit) {
+				const response = await editPost(id, newTitle, newPost);
+				if (!response || !response.post) {
+					throw new Error('Failed to update post');
+				}
+				return response;
+			} else {
+				const response = await createPost(newTitle, newPost);
+				if (!response || !response.post) {
+					throw new Error('Failed to create post');
+				}
+				return response;
 			}
-
-			return response;
 		},
-		onMutate: async () => {
-			await queryClient.cancelQueries({
-				queryKey: ['posts'],
-			});
+		onMutate: async ({ id, title, post }) => {
+			await queryClient.cancelQueries({ queryKey: ['posts'] });
 			const previousPosts = queryClient.getQueryData(['posts']);
-			queryClient.setQueryData(['posts'], (old: { posts: Post[] }) => {
+			let tempId = isEdit ? id : Date.now();
+			queryClient.setQueryData(['posts'], (old: PostList | undefined) => {
+				const newPost = { id: tempId, title, post };
 				if (!old) {
-					return {
-						posts: [
-							{
-								id,
-								title,
-								post,
-							},
-						],
-					};
+					return { posts: [newPost] };
 				}
 				return {
-					...old,
-					posts: old.posts.map((post) =>
-						post.id === id
-							? {
-									id,
-									title,
-									post,
-							  }
-							: post,
-					),
+					posts: old.posts.map((p) => (p.id === tempId ? newPost : p)),
 				};
 			});
-			return { previousPosts };
+			return { previousPosts, tempId };
 		},
-		onSuccess: (newPost: { message: string; post: Post }) => {
+		onSuccess: (newPost: { message: string; post: Post }, { id: tempId }) => {
 			queryClient.setQueryData(['posts'], (old: PostList | undefined) => {
 				if (!old) return { posts: [newPost.post] };
 				return {
 					posts: old.posts.map((post) =>
-						post.id === id ? newPost.post : post,
+						post.id === tempId ? newPost.post : post,
 					),
 				};
 			});
 			setOpen(false);
 			setPost('');
 			setTitle('');
-			toast.success('Blog has been successfully updated', {
-				richColors: true,
-			});
+			toast.success(
+				isEdit
+					? 'Blog has been successfully updated'
+					: 'Blog has been successfully created',
+				{ richColors: true },
+			);
 		},
 		onError: async (_err, _newPost, context) => {
 			queryClient.setQueryData(['posts'], context?.previousPosts);
-			toast.error('There was an error when updating the blog post', {
-				richColors: true,
-			});
+			toast.error(
+				isEdit
+					? 'There was an error when updating the blog post'
+					: 'There was an error when creating the blog post',
+				{ richColors: true },
+			);
+		},
+		onSettled: () => {
+			queryClient.invalidateQueries({ queryKey: ['posts'] });
 		},
 	});
 
 	const handleSubmit = async (e: FormEvent) => {
 		try {
 			e.preventDefault();
-			if (isEdit) {
-				return editPostFn({ id, title, post });
-			}
-			createPostFn({ title, post });
+			submitPost({ id, title, post });
 		} catch (error) {
 			console.error(error);
 		}
@@ -212,7 +136,7 @@ const PostForm = ({
 						value={post}
 						onChange={(e) => setPost(e.target.value)}
 					/>
-					<Button disabled={createPending || editPending}>
+					<Button disabled={isSubmitting}>
 						{isEdit ? 'Update Post' : 'Create Post'}
 					</Button>
 				</form>
