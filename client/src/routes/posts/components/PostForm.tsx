@@ -84,7 +84,7 @@ const PostForm = ({
 				if (!old) return { posts: [newPost.post] };
 				return {
 					posts: old.posts.map((post) =>
-						post.id === context.tempId ? newPost : post,
+						post.id === context.tempId ? newPost.post : post,
 					),
 				};
 			});
@@ -100,9 +100,6 @@ const PostForm = ({
 			toast.error('There was an error when creating the blog post', {
 				richColors: true,
 			});
-		},
-		onSettled: () => {
-			queryClient.invalidateQueries({ queryKey: ['posts'] });
 		},
 	});
 
@@ -159,7 +156,9 @@ const PostForm = ({
 			queryClient.setQueryData(['posts'], (old: PostList | undefined) => {
 				if (!old) return { posts: [newPost.post] };
 				return {
-					posts: old.posts.map((post) => (post.id === id ? newPost : post)),
+					posts: old.posts.map((post) =>
+						post.id === id ? newPost.post : post,
+					),
 				};
 			});
 			setOpen(false);
@@ -174,9 +173,6 @@ const PostForm = ({
 			toast.error('There was an error when updating the blog post', {
 				richColors: true,
 			});
-		},
-		onSettled: () => {
-			queryClient.invalidateQueries({ queryKey: ['posts'] });
 		},
 	});
 
