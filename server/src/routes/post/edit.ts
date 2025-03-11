@@ -1,4 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
+import { updateQuery } from '../../utilities/db.js';
 
 export default async function edit(
 	request: FastifyRequest<{
@@ -15,21 +16,12 @@ export default async function edit(
 		});
 	}
 
-	let setClauses: string[] = [];
-	let values: string[] = [id.toString()];
+	const contruct = {
+		title,
+		post,
+	};
 
-	if (title) {
-		setClauses.push(`title=$${setClauses.length + 2}`);
-		values.push(title);
-	}
-
-	if (post) {
-		setClauses.push(`post=$${setClauses.length + 2}`);
-		values.push(post);
-	}
-
-	setClauses.push(`updated_at=$${setClauses.length + 2}`);
-	values.push(new Date().toISOString());
+	const { setClauses, values } = updateQuery(id, [contruct]);
 
 	if (setClauses.length === 0) {
 		return reply.code(422).send({

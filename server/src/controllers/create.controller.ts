@@ -1,5 +1,4 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { createPost } from '../../services/post/create.service.js';
 
 export default async function create(
 	request: FastifyRequest<{
@@ -23,8 +22,8 @@ export default async function create(
 	}
 
 	try {
-		const rows = await createPost({ db, title, post });
-
+		const dbQuery = `INSERT INTO posts (title, post) VALUES ($1, $2) RETURNING *`;
+		const { rows } = await db.query(dbQuery, [title, post]);
 		if (rows.length === 0) {
 			return reply.code(500).send({ message: 'Failed to create post.' });
 		}
