@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { updateQuery } from '../../utilities/db.js';
+import { editService } from '../../services/post/edit.service.js';
 
 export default async function edit(
 	request: FastifyRequest<{
@@ -16,27 +16,8 @@ export default async function edit(
 		});
 	}
 
-	const contruct = {
-		title,
-		post,
-	};
-
-	const { setClauses, values } = updateQuery(id, [contruct]);
-
-	if (setClauses.length === 0) {
-		return reply.code(422).send({
-			message: 'At least one field (title or post) is required to update',
-		});
-	}
-
-	const dbQuery = `
-    UPDATE posts
-    SET ${setClauses.join(', ')}
-    WHERE id=$1
-    RETURNING *;`;
-
 	try {
-		const { rows } = await db.query(dbQuery, values);
+		const rows = await editService(db, id, title, post);
 
 		if (rows.length === 0) {
 			return reply.code(500).send({ message: 'Failed to update post.' });

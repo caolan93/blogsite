@@ -1,4 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
+import { deletePost as deletePostService } from '../../services/post/delete.service.js';
 
 export default async function deletePost(
 	request: FastifyRequest<{ Params: { id: string } }>,
@@ -12,8 +13,7 @@ export default async function deletePost(
 	}
 
 	try {
-		const deleteQuery = 'DELETE FROM posts WHERE id=$1';
-		const data = await db.query(deleteQuery, [id]);
+		const data = await deletePostService(db, id);
 
 		if (data.rowCount === 0) {
 			return reply.code(404).send({ message: 'Post not found' });

@@ -23,7 +23,7 @@ export default async function create(
 	}
 
 	try {
-		const rows = await createPost({ db, title, post });
+		const rows = await createPost(db, title, post);
 
 		if (rows.length === 0) {
 			return reply.code(500).send({ message: 'Failed to create post.' });

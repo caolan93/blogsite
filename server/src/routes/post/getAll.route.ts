@@ -1,4 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
+import { getAll as getAllService } from '../../services/post/getAll.service.js';
 
 export default async function getAll(
 	request: FastifyRequest,
@@ -7,11 +8,10 @@ export default async function getAll(
 	const { db } = request.server;
 
 	try {
-		const dbQuery = `SELECT  * FROM posts ORDER BY id DESC`;
-		const data = await db.query(dbQuery);
+		const rows = getAllService(db);
 
 		return reply.code(200).header('Content-Type', 'application/json').send({
-			posts: data.rows,
+			posts: rows,
 		});
 	} catch (error) {
 		request.server.log.error('Error inserting post:', error);
